@@ -1,0 +1,1136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Daily Vehicle Inspection – Motherdough</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  :root {
+    --cream: #FAF7F2;
+    --dark: #1C1C1C;
+    --mid: #4A4A4A;
+    --light: #9A9A8A;
+    --accent: #C8420A;
+    --accent-soft: #F4E8E2;
+    --green: #2A6B3C;
+    --green-soft: #E2F0E7;
+    --border: #E0DDD6;
+    --card: #FFFFFF;
+    --radius: 10px;
+    --font-head: 'Georgia', serif;
+    --font-body: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--cream);
+    font-family: var(--font-body);
+    color: var(--dark);
+    font-size: 15px;
+    line-height: 1.5;
+  }
+
+  /* ── Header ── */
+  header {
+    background: var(--dark);
+    color: #fff;
+    padding: 20px 24px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.25);
+  }
+  header h1 {
+    font-family: var(--font-head);
+    font-size: 18px;
+    font-weight: normal;
+    letter-spacing: 0.02em;
+  }
+  header span {
+    font-size: 12px;
+    color: #AAA;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .logo-block { display: flex; flex-direction: column; gap: 2px; }
+
+  /* ── Progress bar ── */
+  #progress-bar-wrap {
+    background: #333;
+    height: 4px;
+  }
+  #progress-bar {
+    height: 4px;
+    background: var(--accent);
+    width: 0%;
+    transition: width 0.3s ease;
+  }
+
+  /* ── Main layout ── */
+  main {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 24px 16px 80px;
+  }
+
+  /* ── Section cards ── */
+  .section {
+    background: var(--card);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    margin-bottom: 16px;
+    overflow: hidden;
+  }
+  .section-header {
+    background: var(--dark);
+    color: #fff;
+    padding: 12px 18px;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+  .section-header.accent { background: var(--accent); }
+  .section-header.green  { background: var(--green); }
+  .section-body { padding: 0; }
+
+  /* ── Meta fields ── */
+  .meta-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+  }
+  .meta-field {
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+  }
+  .meta-field:nth-child(even) { border-right: none; }
+  .meta-field:last-child,
+  .meta-field:nth-last-child(2):nth-child(odd) { border-bottom: none; }
+  .meta-field label {
+    display: block;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--light);
+    margin-bottom: 5px;
+    font-weight: 600;
+  }
+  .meta-field input, .meta-field select {
+    width: 100%;
+    border: none;
+    background: transparent;
+    font-size: 15px;
+    font-family: var(--font-body);
+    color: var(--dark);
+    outline: none;
+    padding: 0;
+  }
+  .meta-field input:focus {
+    border-bottom: 2px solid var(--accent);
+    padding-bottom: 1px;
+  }
+  .meta-field.full {
+    grid-column: 1 / -1;
+    border-right: none;
+  }
+
+  /* ── Fuel level selector ── */
+  .fuel-selector {
+    display: flex;
+    gap: 8px;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+  .fuel-selector label {
+    display: block;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--light);
+    font-weight: 600;
+    margin-bottom: 8px;
+    width: 100%;
+  }
+  .fuel-btn {
+    flex: 1;
+    min-width: 56px;
+    padding: 9px 6px;
+    border: 1.5px solid var(--border);
+    border-radius: 6px;
+    background: transparent;
+    cursor: pointer;
+    font-size: 13px;
+    font-family: var(--font-body);
+    color: var(--mid);
+    text-align: center;
+    transition: all 0.15s;
+  }
+  .fuel-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .fuel-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+    font-weight: 600;
+  }
+
+  /* ── Check rows ── */
+  .check-row {
+    display: flex;
+    align-items: center;
+    padding: 13px 18px;
+    border-bottom: 1px solid var(--border);
+    gap: 12px;
+    cursor: pointer;
+    transition: background 0.1s;
+  }
+  .check-row:last-child { border-bottom: none; }
+  .check-row:hover { background: var(--cream); }
+  .check-row .label { flex: 1; font-size: 14px; color: var(--dark); }
+  .check-row .sub-label { font-size: 11px; color: var(--light); display: block; }
+
+  /* Toggle yes/no */
+  .yn-toggle {
+    display: flex;
+    border: 1.5px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  .yn-btn {
+    padding: 6px 14px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: var(--light);
+    transition: all 0.12s;
+  }
+  .yn-btn + .yn-btn { border-left: 1.5px solid var(--border); }
+  .yn-btn.yes.active  { background: var(--green); color: #fff; }
+  .yn-btn.no.active   { background: var(--accent); color: #fff; }
+
+  /* ── Text inputs inside rows ── */
+  .row-input {
+    width: 100%;
+    border: none;
+    border-bottom: 1.5px solid var(--border);
+    background: transparent;
+    font-size: 14px;
+    font-family: var(--font-body);
+    color: var(--dark);
+    padding: 4px 0;
+    margin-top: 6px;
+    outline: none;
+  }
+  .row-input:focus { border-color: var(--accent); }
+
+  .sub-inputs {
+    padding: 0 18px 14px;
+    background: #FAFAFA;
+    border-bottom: 1px solid var(--border);
+    display: none;
+  }
+  .sub-inputs.visible { display: block; }
+  .sub-inputs label {
+    font-size: 11px;
+    color: var(--light);
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    margin-top: 10px;
+    display: block;
+    margin-bottom: 3px;
+  }
+
+  /* ── Damage / comments textarea ── */
+  textarea.row-input {
+    resize: vertical;
+    min-height: 60px;
+    padding: 6px 0;
+  }
+
+  /* ── Declaration ── */
+  .declaration {
+    background: var(--green-soft);
+    border: 1px solid #B8DFC5;
+    border-radius: var(--radius);
+    padding: 18px;
+    margin-bottom: 16px;
+    font-size: 13px;
+    color: var(--mid);
+    line-height: 1.7;
+  }
+  .declaration strong { color: var(--dark); font-size: 14px; display: block; margin-bottom: 8px; }
+  .declaration ul { padding-left: 18px; }
+  .declaration li { margin-bottom: 4px; }
+
+  /* ── Submit button ── */
+  .btn-submit {
+    display: block;
+    width: 100%;
+    padding: 16px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius);
+    font-size: 16px;
+    font-family: var(--font-body);
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: background 0.15s;
+    margin-bottom: 12px;
+  }
+  .btn-submit:hover { background: #A33408; }
+  .btn-submit:active { transform: scale(0.99); }
+
+  /* ── Complete screen ── */
+  #complete-screen {
+    display: none;
+    text-align: center;
+    padding: 60px 20px;
+  }
+  .complete-icon {
+    width: 72px;
+    height: 72px;
+    background: var(--green);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+    font-size: 36px;
+    color: #fff;
+  }
+  #complete-screen h2 {
+    font-family: var(--font-head);
+    font-size: 24px;
+    font-weight: normal;
+    margin-bottom: 10px;
+  }
+  #complete-screen p {
+    color: var(--mid);
+    margin-bottom: 28px;
+  }
+  .btn-outline {
+    display: inline-block;
+    padding: 12px 24px;
+    border: 2px solid var(--dark);
+    border-radius: 8px;
+    color: var(--dark);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    background: transparent;
+    font-family: var(--font-body);
+    margin: 6px;
+    transition: all 0.15s;
+  }
+  .btn-outline:hover { background: var(--dark); color: #fff; }
+
+  /* ── Sticky footer ── */
+  #sticky-footer {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: rgba(28,28,28,0.95);
+    backdrop-filter: blur(8px);
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 99;
+  }
+  #sticky-footer .count {
+    color: #fff;
+    font-size: 13px;
+  }
+  #sticky-footer .count span { color: var(--accent); font-weight: 700; }
+  #sticky-footer .btn-pdf {
+    padding: 9px 20px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 7px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: var(--font-body);
+    letter-spacing: 0.04em;
+  }
+  #sticky-footer .btn-pdf:hover { background: #A33408; }
+
+  .action-tomorrow-wrap {
+    padding: 14px 18px 16px;
+    border-top: 1px solid var(--border);
+    background: #FAFAFA;
+  }
+  .action-tomorrow-label {
+    display: block;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--light);
+    margin-bottom: 8px;
+  }
+  .action-tomorrow-input {
+    width: 100%;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 14px;
+    font-family: var(--font-body);
+    color: var(--dark);
+    background: #fff;
+    resize: vertical;
+    min-height: 72px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .action-tomorrow-input:focus { border-color: var(--accent); }
+
+  @media (max-width: 480px) {
+    .meta-grid { grid-template-columns: 1fr; }
+    .meta-field { border-right: none !important; }
+    .yn-btn { padding: 6px 10px; }
+  }
+
+  /* ── Alert Modal ── */
+  #alert-modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.55);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  #alert-modal-overlay.open {
+    display: flex;
+  }
+  #alert-modal {
+    background: #fff;
+    border-radius: 14px;
+    width: 100%;
+    max-width: 420px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+    animation: modal-in 0.2s ease;
+  }
+  @keyframes modal-in {
+    from { transform: scale(0.93) translateY(10px); opacity: 0; }
+    to   { transform: scale(1) translateY(0);       opacity: 1; }
+  }
+  .modal-header {
+    background: var(--accent);
+    padding: 18px 20px 14px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .modal-icon {
+    width: 36px;
+    height: 36px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .modal-header-text h3 {
+    color: #fff;
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 3px;
+  }
+  .modal-header-text p {
+    color: rgba(255,255,255,0.8);
+    font-size: 12px;
+    line-height: 1.4;
+  }
+  .modal-body {
+    padding: 20px;
+  }
+  .modal-body label {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--light);
+    margin-bottom: 8px;
+  }
+  .modal-body textarea {
+    width: 100%;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 14px;
+    font-family: var(--font-body);
+    color: var(--dark);
+    resize: none;
+    outline: none;
+    min-height: 90px;
+    background: var(--cream);
+    transition: border-color 0.15s;
+  }
+  .modal-body textarea:focus {
+    border-color: var(--accent);
+    background: #fff;
+  }
+  .modal-footer {
+    padding: 0 20px 20px;
+    display: flex;
+    gap: 10px;
+  }
+  .modal-btn-confirm {
+    flex: 1;
+    padding: 12px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 700;
+    font-family: var(--font-body);
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .modal-btn-confirm:hover { background: #A33408; }
+  .modal-btn-cancel {
+    padding: 12px 18px;
+    background: transparent;
+    color: var(--mid);
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: var(--font-body);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .modal-btn-cancel:hover { border-color: var(--dark); color: var(--dark); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-block">
+    <h1>Motherdough</h1>
+    <span>Daily Vehicle Inspection</span>
+  </div>
+  <div id="header-date" style="font-size:13px;color:#AAA;"></div>
+</header>
+<div id="progress-bar-wrap"><div id="progress-bar"></div></div>
+
+<main id="form-main">
+
+  <!-- ── VEHICLE INFO ── -->
+  <div class="section">
+    <div class="section-header">Vehicle Information</div>
+    <div class="section-body">
+      <div class="meta-grid">
+        <div class="meta-field"><label>Date</label><input type="date" id="date" /></div>
+        <div class="meta-field"><label>Driver Name</label><input type="text" id="driver" placeholder="Full name" /></div>
+        <div class="meta-field full"><label>Vehicle</label><input type="text" id="vehicle" value="Fiat Fiorino – White – CAA 242625" /></div>
+        <div class="meta-field"><label>Start Odometer (km)</label><input type="number" id="odo-start" placeholder="e.g. 54200" /></div>
+        <div class="meta-field"><label>End Odometer (km)</label><input type="number" id="odo-end" placeholder="e.g. 54380" /></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── START OF DAY ── -->
+  <div class="section">
+    <div class="section-header accent">Start of Day Inspection</div>
+    <div class="section-body">
+
+      <!-- Fuel level -->
+      <div class="fuel-selector">
+        <label>Fuel Level at Start</label>
+        <button class="fuel-btn" data-fuel="Full" onclick="setFuel(this)">Full</button>
+        <button class="fuel-btn" data-fuel="3/4" onclick="setFuel(this)">¾</button>
+        <button class="fuel-btn" data-fuel="1/2" onclick="setFuel(this)">½</button>
+        <button class="fuel-btn" data-fuel="1/4" onclick="setFuel(this)">¼</button>
+        <button class="fuel-btn" data-fuel="Reserve" onclick="setFuel(this)">Reserve</button>
+      </div>
+
+      <div id="sod-checks"></div>
+    </div>
+  </div>
+
+  <!-- ── FUEL MANAGEMENT ── -->
+  <div class="section">
+    <div class="section-header">Fuel Management</div>
+    <div class="section-body" id="fuel-checks"></div>
+  </div>
+
+  <!-- ── VEHICLE CLEANING ── -->
+  <div class="section">
+    <div class="section-header">Vehicle Cleaning</div>
+    <div class="section-body" id="cleaning-checks"></div>
+  </div>
+
+  <!-- ── VEHICLE ISSUES ── -->
+  <div class="section">
+    <div class="section-header accent">Vehicle Issues / Maintenance</div>
+    <div class="section-body" id="issues-checks"></div>
+  </div>
+
+  <!-- ── OUTSTANDING TASKS ── -->
+  <div class="section">
+    <div class="section-header">Outstanding Tasks, Orders & Deliveries</div>
+    <div class="section-body" id="tasks-checks"></div>
+    <div class="action-tomorrow-wrap">
+      <label class="action-tomorrow-label">Action Required Tomorrow</label>
+      <textarea id="action_tomorrow" class="action-tomorrow-input" placeholder="List any actions that must be followed up on tomorrow..." oninput="state['action_tomorrow']=this.value"></textarea>
+    </div>
+  </div>
+
+  <!-- ── DAILY HANDOVER ── -->
+  <div class="section">
+    <div class="section-header green">Daily Handover & End of Day</div>
+    <div class="section-body" id="handover-checks"></div>
+  </div>
+
+  <!-- ── DECLARATION ── -->
+  <div class="declaration">
+    <strong>Final Declaration</strong>
+    <ul>
+      <li>The vehicle inspection has been completed.</li>
+      <li>All fuel receipts have been submitted.</li>
+      <li>All car wash receipts have been submitted.</li>
+      <li>All outstanding tasks, deliveries, collections and orders have been communicated.</li>
+      <li>The vehicle has been handed over correctly.</li>
+      <li>The location of the keys and company bank card has been communicated.</li>
+      <li>The vehicle has been parked at the approved company location.</li>
+    </ul>
+  </div>
+
+  <button class="btn-submit" onclick="generatePDF()">✓ Complete & Download PDF</button>
+
+</main>
+
+<!-- ── Alert Modal ── -->
+<div id="alert-modal-overlay">
+  <div id="alert-modal">
+    <div class="modal-header">
+      <div class="modal-icon">⚠️</div>
+      <div class="modal-header-text">
+        <h3 id="modal-title">Warning Lights Present</h3>
+        <p id="modal-subtitle">Please describe what you see so management can follow up.</p>
+      </div>
+    </div>
+    <div class="modal-body">
+      <label id="modal-label">Describe the warning lights</label>
+      <textarea id="modal-textarea" placeholder="e.g. Engine light on, oil pressure warning..."></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="modal-btn-cancel" onclick="closeModal(true)">Skip</button>
+      <button class="modal-btn-confirm" onclick="closeModal(false)">Save &amp; Continue</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Complete screen ── -->
+<div id="complete-screen">
+  <div class="complete-icon">✓</div>
+  <h2>Inspection Complete</h2>
+  <p>Your PDF has been saved. Send it to the driver handover group.</p>
+  <button class="btn-outline" onclick="downloadAgain()">⬇ Download PDF Again</button>
+  <button class="btn-outline" onclick="resetForm()">＋ New Inspection</button>
+</div>
+
+<!-- ── Sticky footer ── -->
+<div id="sticky-footer">
+  <div class="count">Completed: <span id="count-done">0</span> / <span id="count-total">0</span></div>
+  <button class="btn-pdf" onclick="generatePDF()">Download PDF</button>
+</div>
+
+<script>
+// ── Data definitions ──────────────────────────────────────────────────────────
+
+const sodChecks = [
+  { id:"sod_odo_photo",     label:"Start odometer photo uploaded to Driver Handover Group?" },
+  { id:"sod_fuel_photo",    label:"Start fuel gauge photo uploaded to Driver Handover Group?" },
+  { id:"sod_dash_lights",   label:"Dashboard warning lights present?", flagOnYes: true, popup: true, popupTitle: "Warning Lights Present", popupSubtitle: "Please describe what warning lights are showing so management can follow up.", popupLabel: "Describe the warning lights" },
+  { id:"sod_mech_concern",  label:"Mechanical concerns noticed?",       flagOnYes: true, popup: true, popupTitle: "Mechanical Concerns", popupSubtitle: "Please describe the mechanical issue so it can be addressed promptly.", popupLabel: "Describe the mechanical concern" },
+  { id:"sod_clean_inside",  label:"Vehicle clean and presentable inside?" },
+  { id:"sod_damage",        label:"Vehicle damage noticed?", flagOnYes: true, hasComment:true, commentLabel:"Describe damage" },
+  { id:"sod_clean_outside", label:"Vehicle clean and presentable outside?" },
+  { id:"sod_wipers",        label:"Wiper blades functioning?" },
+  { id:"sod_oil",           label:"Oil checked?" },
+  { id:"sod_windscreen",    label:"Windscreen clean?" },
+  { id:"sod_water",         label:"Water / Coolant checked?" },
+  { id:"sod_brake_lights",  label:"Brake lights checked?" },
+  { id:"sod_tyres",         label:"Tyres checked?" },
+  { id:"sod_tyre_cond",     label:"Tyre condition acceptable?" },
+  { id:"sod_indicators",    label:"Indicators checked?" },
+  { id:"sod_lights",        label:"Lights checked?" },
+];
+
+const fuelChecks = [
+  { id:"fuel_added",     label:"Was fuel added today?", flagOnYes: false, hasSubInputs:true,
+    subInputs:[
+      {id:"fuel_amount", label:"Amount Added (R)", placeholder:"e.g. R 350.00"},
+      {id:"fuel_station",label:"Fuel Station", placeholder:"e.g. BP Buitenkant"},
+    ]},
+  { id:"fuel_receipt",   label:"Fuel receipt posted immediately to Driver Handover Group?" },
+  { id:"fuel_photo_clear", label:"Was the receipt photo clear and readable?" },
+  { id:"pnp_used",       label:"Pick n Pay Smart Shopper used (when applicable)?", popup: true, popupOnNo: true, popupTitle: "PnP Smart Shopper Not Used", popupSubtitle: "Please explain why the Smart Shopper card was not used.", popupLabel: "Reason Smart Shopper was not used" },
+  { id:"bp_card",        label:"BP Rewards Card used?", popup: true, popupOnNo: true, popupTitle: "BP Rewards Card Not Used", popupSubtitle: "Please explain why the BP Rewards Card was not used.", popupLabel: "Reason BP Rewards Card was not used" },
+];
+
+const cleaningChecks = [
+  { id:"washed",         label:"Was the vehicle washed today?", hasSubInputs:true,
+    subInputs:[
+      {id:"wash_name",   label:"Car Wash Name", placeholder:"e.g. Rite Wash"},
+      {id:"wash_amount", label:"Amount Paid (R)", placeholder:"e.g. R 80.00"},
+    ]},
+  { id:"wash_receipt",   label:"Car wash receipt uploaded to Driver Handover Group?" },
+  { id:"wash_photo_ok",  label:"Was the receipt photo clear and readable?" },
+];
+
+const issueChecks = [
+  { id:"warn_lights",    label:"Any warning lights?",     flagOnYes: true },
+  { id:"mech_issues",    label:"Any mechanical issues?",  flagOnYes: true },
+  { id:"accident",       label:"Any accident or damage?", flagOnYes: true, hasComment:true, commentLabel:"Describe accident / damage in detail" },
+];
+
+const taskChecks = [
+  { id:"del_incomplete",  label:"Any deliveries not completed?",          hasComment:true, commentLabel:"Details" },
+  { id:"col_incomplete",  label:"Any collections not completed?",         hasComment:true, commentLabel:"Details" },
+  { id:"stock_incomplete",label:"Any stock transfers not completed?",     hasComment:true, commentLabel:"Details" },
+  { id:"supplier_incomplete",label:"Any supplier orders not collected?",  hasComment:true, commentLabel:"Details" },
+  { id:"cust_incomplete", label:"Any customer orders not delivered?",     hasComment:true, commentLabel:"Details" },
+  { id:"other_incomplete",label:"Any other tasks not completed today?",   hasComment:true, commentLabel:"Details" },
+];
+
+const handoverChecks = [
+  { id:"outstanding_posted", label:"All outstanding matters posted to Driver Handover Group before clocking out?" },
+  { id:"vehicle_reported",   label:"Vehicle issues reported to management?" },
+  { id:"keys_communicated",  label:"Keys location communicated?", hasSubInputs:true,
+    subInputs:[{id:"keys_location",label:"Keys left at", placeholder:"e.g. Reception drawer"}]},
+  { id:"card_communicated",  label:"Bank card location communicated?", hasSubInputs:true,
+    subInputs:[{id:"card_location",label:"Bank card left at", placeholder:"e.g. Manager's safe"}]},
+  { id:"eod_odo_photo",      label:"End-of-day odometer photo uploaded to Driver Handover Group?" },
+  { id:"eod_fuel_photo",     label:"End-of-day fuel gauge photo uploaded to Driver Handover Group?" },
+  { id:"parked_approved",    label:"Vehicle parked at approved company location?" },
+  { id:"vehicle_ready",      label:"Vehicle cleaned and ready for next day?" },
+  { id:"vehicle_locked",     label:"Vehicle locked and secured?" },
+  { id:"bp_card_present",    label:"BP Rewards Card present in vehicle?" },
+  { id:"pnp_card_present",   label:"Pick n Pay Smart Shopper Card present in vehicle?" },
+];
+
+// ── State ─────────────────────────────────────────────────────────────────────
+const state = {};
+let fuelLevel = '';
+let lastPdfDoc = null;
+let activeModalId = null;
+
+// ── Render helpers ────────────────────────────────────────────────────────────
+
+function renderChecks(containerId, checks) {
+  const container = document.getElementById(containerId);
+  checks.forEach(chk => {
+    // Main row
+    const row = document.createElement('div');
+    row.className = 'check-row';
+    row.innerHTML = `
+      <span class="label">${chk.label}</span>
+      <div class="yn-toggle">
+        <button class="yn-btn yes" data-id="${chk.id}" data-val="Yes" onclick="setVal('${chk.id}','Yes',this)">Yes</button>
+        <button class="yn-btn no"  data-id="${chk.id}" data-val="No"  onclick="setVal('${chk.id}','No',this)">No</button>
+      </div>`;
+    container.appendChild(row);
+
+    // Sub-inputs (shown conditionally)
+    if (chk.hasSubInputs || chk.hasComment) {
+      const sub = document.createElement('div');
+      sub.className = 'sub-inputs';
+      sub.id = `sub_${chk.id}`;
+
+      if (chk.hasSubInputs) {
+        chk.subInputs.forEach(inp => {
+          sub.innerHTML += `<label>${inp.label}</label><input class="row-input" id="${inp.id}" type="text" placeholder="${inp.placeholder}" oninput="state['${inp.id}']=this.value;updateProgress()">`;
+        });
+      }
+      if (chk.hasComment) {
+        sub.innerHTML += `<label>${chk.commentLabel || 'Comments'}</label><textarea class="row-input" id="cmt_${chk.id}" rows="2" placeholder="Add details..." oninput="state['cmt_${chk.id}']=this.value"></textarea>`;
+      }
+      container.appendChild(sub);
+    }
+  });
+}
+
+function setVal(id, val, btn) {
+  state[id] = val;
+  // Update button styles
+  btn.parentElement.querySelectorAll('.yn-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  // Show sub-inputs if val matches trigger
+  const subEl = document.getElementById(`sub_${id}`);
+  if (subEl) {
+    const chk = allChecks().find(c => c.id === id);
+    if (chk) {
+      const showOnYes = chk.hasSubInputs || chk.hasComment;
+      subEl.classList.toggle('visible', showOnYes && val === 'Yes');
+    }
+  }
+  // Trigger popup if needed
+  const chk = allChecks().find(c => c.id === id);
+  if (chk && chk.popup) {
+    const triggerOnYes = !chk.popupOnNo && val === 'Yes';
+    const triggerOnNo  = chk.popupOnNo  && val === 'No';
+    if (triggerOnYes || triggerOnNo) openModal(id, chk);
+  }
+  updateProgress();
+}
+
+function openModal(id, chk) {
+  activeModalId = id;
+  document.getElementById('modal-title').textContent = chk.popupTitle;
+  document.getElementById('modal-subtitle').textContent = chk.popupSubtitle;
+  document.getElementById('modal-label').textContent = chk.popupLabel;
+  document.getElementById('modal-textarea').value = state[`popup_${id}`] || '';
+  document.getElementById('modal-textarea').placeholder = 'Type details here...';
+  document.getElementById('alert-modal-overlay').classList.add('open');
+  setTimeout(() => document.getElementById('modal-textarea').focus(), 200);
+}
+
+function closeModal(skip) {
+  if (!skip) {
+    const val = document.getElementById('modal-textarea').value.trim();
+    if (activeModalId) state[`popup_${activeModalId}`] = val;
+  }
+  document.getElementById('alert-modal-overlay').classList.remove('open');
+  activeModalId = null;
+}
+
+// Close modal on overlay click
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('alert-modal-overlay').addEventListener('click', function(e) {
+    if (e.target === this) closeModal(true);
+  });
+});
+
+function setFuel(btn) {
+  document.querySelectorAll('.fuel-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  fuelLevel = btn.dataset.fuel;
+  updateProgress();
+}
+
+function allChecks() {
+  return [...sodChecks, ...fuelChecks, ...cleaningChecks, ...issueChecks, ...taskChecks, ...handoverChecks];
+}
+
+function updateProgress() {
+  const checks = allChecks();
+  const total = checks.length;
+  const done = checks.filter(c => state[c.id]).length;
+  document.getElementById('count-done').textContent = done;
+  document.getElementById('count-total').textContent = total;
+  document.getElementById('progress-bar').style.width = `${(done/total)*100}%`;
+}
+
+// ── PDF generation ─────────────────────────────────────────────────────────────
+
+function generatePDF() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+
+  const pageW = 210, margin = 14;
+  const contentW = pageW - margin * 2;
+  let y = 0;
+
+  const BLACK = [28, 28, 28];
+  const ACCENT = [200, 66, 10];
+  const GREEN_D = [42, 107, 60];
+  const LIGHT = [154, 154, 138];
+  const BORDER = [224, 221, 214];
+  const WHITE = [255, 255, 255];
+  const CREAM = [250, 247, 242];
+
+  function newPage() {
+    doc.addPage();
+    y = 14;
+  }
+  function checkPage(needed = 12) {
+    if (y + needed > 280) newPage();
+  }
+
+  // ── Cover strip
+  doc.setFillColor(...BLACK);
+  doc.rect(0, 0, pageW, 28, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(17);
+  doc.setTextColor(...WHITE);
+  doc.text('MOTHERDOUGH', margin, 13);
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(170, 170, 170);
+  doc.text('DAILY VEHICLE INSPECTION & HANDOVER SHEET', margin, 20);
+
+  // Date top right
+  const dateVal = document.getElementById('date').value || new Date().toISOString().slice(0,10);
+  doc.setTextColor(...WHITE);
+  doc.setFontSize(9);
+  doc.text(formatDate(dateVal), pageW - margin, 13, { align: 'right' });
+
+  y = 36;
+
+  // ── Meta block
+  function metaRow(label, value) {
+    checkPage(9);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.5);
+    doc.setTextColor(...LIGHT);
+    doc.text(label.toUpperCase(), margin, y);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.setTextColor(...BLACK);
+    doc.text(String(value || '—'), margin + 40, y);
+    y += 7;
+  }
+
+  const driver = document.getElementById('driver').value || '—';
+  const vehicle = document.getElementById('vehicle').value || 'Fiat Fiorino';
+  const odoStart = document.getElementById('odo-start').value || '—';
+  const odoEnd   = document.getElementById('odo-end').value || '—';
+
+  metaRow('Driver', driver);
+  metaRow('Vehicle', vehicle);
+  metaRow('Start Odometer', odoStart + ' km');
+  metaRow('End Odometer', odoEnd + ' km');
+  metaRow('Fuel Level at Start', fuelLevel || '—');
+  y += 4;
+
+  // ── Section renderer
+  function pdfSection(title, checks, headerColor = BLACK) {
+    checkPage(20);
+    // Header
+    doc.setFillColor(...headerColor);
+    doc.roundedRect(margin, y, contentW, 8, 1.5, 1.5, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
+    doc.setTextColor(...WHITE);
+    doc.text(title.toUpperCase(), margin + 4, y + 5.5);
+    y += 12;
+
+    checks.forEach(chk => {
+      checkPage(10);
+      const val = state[chk.id] || '—';
+      const isFlag = (chk.flagOnYes && val === 'Yes') || (val === 'No' && !chk.flagOnYes && chk.id.startsWith('sod') && !['sod_dash_lights','sod_mech_concern','sod_damage'].includes(chk.id));
+
+      // Row background
+      doc.setFillColor(...CREAM);
+      doc.rect(margin, y - 4, contentW, 8, 'F');
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8.5);
+      doc.setTextColor(...BLACK);
+
+      // Wrap long labels
+      const labelLines = doc.splitTextToSize(chk.label, contentW - 28);
+      doc.text(labelLines, margin + 3, y);
+
+      // Value badge
+      const badgeX = margin + contentW - 3;
+      let badgeColor = val === 'Yes' ? GREEN_D : (val === 'No' ? ACCENT : LIGHT);
+      doc.setFillColor(...badgeColor);
+      doc.roundedRect(badgeX - 16, y - 4, 16, 7, 1, 1, 'F');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7.5);
+      doc.setTextColor(...WHITE);
+      doc.text(val, badgeX - 8, y + 0.5, { align: 'center' });
+
+      y += labelLines.length > 1 ? 5 * labelLines.length : 7;
+
+      // Sub-inputs
+      if (chk.hasSubInputs) {
+        chk.subInputs.forEach(si => {
+          const v = state[si.id];
+          if (v) {
+            checkPage(6);
+            doc.setFont('helvetica', 'italic');
+            doc.setFontSize(8);
+            doc.setTextColor(...LIGHT);
+            doc.text(`${si.label}: `, margin + 6, y);
+            doc.setTextColor(...BLACK);
+            doc.setFont('helvetica', 'normal');
+            doc.text(v, margin + 6 + doc.getTextWidth(`${si.label}: `), y);
+            y += 5;
+          }
+        });
+      }
+      if (chk.hasComment) {
+        const cmt = state[`cmt_${chk.id}`];
+        if (cmt) {
+          checkPage(6);
+          doc.setFont('helvetica', 'italic');
+          doc.setFontSize(8);
+          doc.setTextColor(...LIGHT);
+          const cLines = doc.splitTextToSize(`Note: ${cmt}`, contentW - 12);
+          doc.text(cLines, margin + 6, y);
+          y += cLines.length * 5;
+        }
+      }
+      // Popup modal note (warning lights / mechanical concerns)
+      if (chk.popup) {
+        const note = state[`popup_${chk.id}`];
+        if (note) {
+          checkPage(8);
+          // Highlight box
+          doc.setFillColor(254, 236, 230);
+          const noteLines = doc.splitTextToSize(`⚠ ${note}`, contentW - 16);
+          const boxH = noteLines.length * 4.5 + 6;
+          doc.roundedRect(margin + 3, y - 1, contentW - 6, boxH, 1.5, 1.5, 'F');
+          doc.setFont('helvetica', 'italic');
+          doc.setFontSize(8);
+          doc.setTextColor(...ACCENT);
+          doc.text(noteLines, margin + 7, y + 3.5);
+          y += boxH + 2;
+        }
+      }
+    });
+    y += 5;
+  }
+
+  pdfSection('Start of Day Inspection', sodChecks, ACCENT);
+  pdfSection('Fuel Management', fuelChecks);
+  pdfSection('Vehicle Cleaning', cleaningChecks);
+  pdfSection('Vehicle Issues / Maintenance', issueChecks, ACCENT);
+  pdfSection('Outstanding Tasks, Orders & Deliveries', taskChecks);
+  pdfSection('Daily Handover & End of Day', handoverChecks, GREEN_D);
+
+  // ── Declaration
+  checkPage(50);
+  doc.setFillColor(...CREAM);
+  doc.roundedRect(margin, y, contentW, 44, 2, 2, 'F');
+  doc.setDrawColor(...BORDER);
+  doc.setLineWidth(0.3);
+  doc.roundedRect(margin, y, contentW, 44, 2, 2, 'S');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(9);
+  doc.setTextColor(...BLACK);
+  doc.text('FINAL DECLARATION', margin + 4, y + 7);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  doc.setTextColor(...BLACK);
+  const decl = [
+    '• The vehicle inspection has been completed.',
+    '• All fuel receipts have been submitted.',
+    '• All car wash receipts have been submitted.',
+    '• All outstanding tasks, deliveries and collections have been communicated.',
+    '• The vehicle has been handed over correctly.',
+    '• The location of keys and the company bank card has been communicated.',
+    '• The vehicle has been parked at the approved company location.',
+  ];
+  decl.forEach((line, i) => {
+    doc.text(line, margin + 4, y + 14 + i * 4.2);
+  });
+  y += 50;
+
+  // ── Action Required Tomorrow
+  const actionTomorrow = state['action_tomorrow'];
+  if (actionTomorrow) {
+    checkPage(20);
+    doc.setFillColor(...BLACK);
+    doc.roundedRect(margin, y, contentW, 8, 1.5, 1.5, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
+    doc.setTextColor(...WHITE);
+    doc.text('ACTION REQUIRED TOMORROW', margin + 4, y + 5.5);
+    y += 12;
+    doc.setFillColor(...CREAM);
+    const aLines = doc.splitTextToSize(actionTomorrow, contentW - 10);
+    const aBoxH = aLines.length * 5 + 8;
+    doc.rect(margin, y, contentW, aBoxH, 'F');
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(...BLACK);
+    doc.text(aLines, margin + 4, y + 6);
+    y += aBoxH + 6;
+  }
+
+  // ── Submitted date
+  checkPage(18);
+  doc.setFillColor(...CREAM);
+  doc.roundedRect(margin, y, contentW, 14, 2, 2, 'F');
+  doc.setDrawColor(...BORDER);
+  doc.setLineWidth(0.3);
+  doc.roundedRect(margin, y, contentW, 14, 2, 2, 'S');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  doc.setTextColor(...LIGHT);
+  doc.text('SUBMITTED BY', margin + 4, y + 5.5);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
+  doc.setTextColor(...BLACK);
+  doc.text(`${driver}   ·   ${formatDate(dateVal)}`, margin + 4, y + 10.5);
+  y += 20;
+
+  // Footer on last page
+  doc.setFillColor(...BLACK);
+  doc.rect(0, 290, pageW, 7, 'F');
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  doc.setTextColor(170, 170, 170);
+  doc.text('Motherdough Pty Ltd  |  Reg No: 2020/472827/07  |  8 Vredenburg Lane, Cape Town, 8000  |  willem@motherdough.co.za', pageW/2, 294.5, { align: 'center' });
+
+  lastPdfDoc = doc;
+  const filename = `Vehicle_Inspection_${driver.replace(/\s+/g,'_')}_${dateVal}.pdf`;
+  doc.save(filename);
+
+  document.getElementById('form-main').style.display = 'none';
+  document.getElementById('sticky-footer').style.display = 'none';
+  document.getElementById('complete-screen').style.display = 'block';
+}
+
+function formatDate(d) {
+  if (!d) return '';
+  const [y,m,day] = d.split('-');
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return `${parseInt(day)} ${months[parseInt(m)-1]} ${y}`;
+}
+
+function downloadAgain() {
+  if (lastPdfDoc) lastPdfDoc.save('Vehicle_Inspection.pdf');
+}
+
+function resetForm() {
+  location.reload();
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  // Set today's date
+  const today = new Date().toISOString().slice(0, 10);
+  document.getElementById('date').value = today;
+  document.getElementById('header-date').textContent = formatDate(today);
+
+  renderChecks('sod-checks', sodChecks);
+  renderChecks('fuel-checks', fuelChecks);
+  renderChecks('cleaning-checks', cleaningChecks);
+  renderChecks('issues-checks', issueChecks);
+  renderChecks('tasks-checks', taskChecks);
+  renderChecks('handover-checks', handoverChecks);
+
+  updateProgress();
+});
+</script>
+</body>
+</html>
