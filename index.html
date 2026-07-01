@@ -405,7 +405,113 @@
     .yn-btn { padding: 6px 10px; }
   }
 
-  /* ── Alert Modal ── */
+  /* ── Tab navigation ── */
+  .tab-bar {
+    background: var(--dark);
+    display: flex;
+    border-top: 1px solid #333;
+  }
+  .tab-btn {
+    flex: 1;
+    padding: 11px 8px 10px;
+    border: none;
+    background: transparent;
+    color: #888;
+    font-size: 11px;
+    font-family: var(--font-body);
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    transition: all 0.15s;
+  }
+  .tab-btn.active {
+    color: #fff;
+    border-bottom-color: var(--accent);
+  }
+  .tab-btn:hover:not(.active) { color: #ccc; }
+
+  /* ── Policy page ── */
+  #policy-main {
+    display: none;
+    margin: 0 auto;
+    padding: 24px 16px 80px;
+  }
+  .policy-section {
+    background: var(--card);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    margin-bottom: 16px;
+    overflow: hidden;
+  }
+  .policy-section-header {
+    background: var(--dark);
+    color: #fff;
+    padding: 12px 18px;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    user-select: none;
+  }
+  .policy-section-header .chevron {
+    font-size: 14px;
+    transition: transform 0.2s;
+    color: #aaa;
+  }
+  .policy-section-header.open .chevron { transform: rotate(180deg); }
+  .policy-section-header.accent-hdr { background: var(--accent); }
+  .policy-body {
+    padding: 18px;
+    font-size: 14px;
+    line-height: 1.75;
+    color: var(--mid);
+    display: none;
+  }
+  .policy-body.open { display: block; }
+  .policy-body p { margin-bottom: 10px; }
+  .policy-body p:last-child { margin-bottom: 0; }
+  .policy-body ul {
+    padding-left: 20px;
+    margin-bottom: 10px;
+  }
+  .policy-body ul:last-child { margin-bottom: 0; }
+  .policy-body li { margin-bottom: 5px; }
+  .policy-body strong { color: var(--dark); }
+  .policy-body .highlight {
+    background: var(--accent-soft);
+    border-left: 3px solid var(--accent);
+    padding: 10px 14px;
+    border-radius: 0 6px 6px 0;
+    margin: 10px 0;
+    font-size: 13px;
+    color: var(--dark);
+  }
+  .policy-hero {
+    background: var(--dark);
+    border-radius: var(--radius);
+    padding: 22px 18px;
+    margin-bottom: 16px;
+    color: #fff;
+  }
+  .policy-hero h2 {
+    font-family: var(--font-head);
+    font-size: 20px;
+    font-weight: normal;
+    margin-bottom: 6px;
+  }
+  .policy-hero p {
+    font-size: 13px;
+    color: #AAA;
+    line-height: 1.6;
+  }
+
+
   #alert-modal-overlay {
     display: none;
     position: fixed;
@@ -530,10 +636,14 @@
 <header>
   <div class="logo-block">
     <h1>Motherdough</h1>
-    <span>Daily Vehicle Inspection</span>
+    <span id="header-subtitle">Daily Vehicle Inspection</span>
   </div>
   <div id="header-date" style="font-size:13px;color:#AAA;"></div>
 </header>
+<div class="tab-bar">
+  <button class="tab-btn active" onclick="switchTab('inspection')">📋 Inspection</button>
+  <button class="tab-btn" onclick="switchTab('policy')">📖 Policy</button>
+</div>
 <div id="progress-bar-wrap"><div id="progress-bar"></div></div>
 
 <main id="form-main">
@@ -623,7 +733,262 @@
 
 </main>
 
-<!-- ── Alert Modal ── -->
+<!-- ── POLICY PAGE ── -->
+<div id="policy-main">
+
+  <div class="policy-hero">
+    <h2>Driver, Vehicle & Communication Policy</h2>
+    <p>Motherdough Pty Ltd &nbsp;·&nbsp; Compliance is mandatory for all authorised drivers.</p>
+  </div>
+
+  <!-- 1 Purpose -->
+  <div class="policy-section">
+    <div class="policy-section-header" onclick="togglePolicy(this)">
+      1. Purpose <span class="chevron">▾</span>
+    </div>
+    <div class="policy-body">
+      <p>This policy outlines the responsibilities, standards, and expectations for all employees authorised to operate company vehicles on behalf of Motherdough.</p>
+      <ul>
+        <li>Protect company assets</li>
+        <li>Ensure safe vehicle operation</li>
+        <li>Ensure proper communication</li>
+        <li>Ensure accountability and handovers</li>
+        <li>Promote efficient use of company resources</li>
+        <li>Minimise unnecessary costs and operational disruptions</li>
+      </ul>
+      <div class="highlight">Compliance with this policy is mandatory.</div>
+    </div>
+  </div>
+
+  <!-- 2 Company Vehicle Use -->
+  <div class="policy-section">
+    <div class="policy-section-header" onclick="togglePolicy(this)">
+      2. Company Vehicle Use <span class="chevron">▾</span>
+    </div>
+    <div class="policy-body">
+      <p>Company vehicles are provided strictly for business purposes. Employees may <strong>not</strong>:</p>
+      <ul>
+        <li>Use company vehicles for personal purposes or errands</li>
+        <li>Allow unauthorised passengers in company vehicles</li>
+        <li>Allow unauthorised persons to drive company vehicles</li>
+        <li>Use company vehicles outside approved business activities</li>
+      </ul>
+      <p>Drivers must hold a valid South African driver's licence at all times. Any suspension, expiry, or restriction must be reported immediately.</p>
+    </div>
+  </div>
+
+  <!-- 3 Vehicle Storage -->
+  <div class="policy-section">
+    <div class="policy-section-header" onclick="togglePolicy(this)">
+      3. Vehicle Storage <span class="chevron">▾</span>
+    </div>
+    <div class="policy-body">
+      <p>Company vehicles may <strong>not</strong> be parked overnight at an employee's residence.</p>
+      <p>Vehicles must be returned to the approved Motherdough location at the end of each working day unless prior written permission has been granted by management.</p>
+      <div class="highlight">Failure to comply will result in disciplinary action.</div>
+    </div>
+  </div>
+
+  <!-- 4 Daily Inspection -->
+  <div class="policy-section">
+    <div class="policy-section-header accent-hdr" onclick="togglePolicy(this)">
+      4. Daily Vehicle Inspection <span class="chevron">▾</span>
+    </div>
+    <div class="policy-body">
+      <p>The assigned driver is responsible for conducting a daily inspection before commencing duties. The inspection includes:</p>
+      <ul>
+        <li>Fuel level</li>
+        <li>Oil level</li>
+        <li>Water / Coolant level</li>
+        <li>Tyres</li>
+        <li>Lights</li>
+        <li>Windscreen</li>
+        <li>Wipers</li>
+        <li>Vehicle cleanliness</li>
+        <li>Visible damage</li>
+        <li>Dashboard warning lights</li>
+      </ul>
+      <div class="highlight">The Daily Vehicle Inspection Form must be completed daily. Any defects must be reported immediately.</div>
+    </div>
+  </div>
+
+  <!-- 5 Vehicle Care -->
+  <div class="policy-section">
+    <div class="policy-section-header" onclick="togglePolicy(this)">
+      5. Vehicle Care & Maintenance <span class="chevron">▾</span>
+    </div>
+    <div class="policy-body">
+      <p>Drivers are expected to:</p>
+      <ul>
+        <li>Keep vehicles clean and presentable inside and outside</li>
+        <li>Monitor oil and water levels</li>
+        <li>Report warning lights, unusual sounds, and tyre damage immediately</li>
+        <li>Report accidents immediately</li>
+        <li>Lock and secure the vehicle whenever unattended</li>
+      </ul>
+      <div class="highlight">Ignoring or failing to report vehicle issues may result in disciplinary action.</div>
+    </div>
+  </div>
+
+  <!-- 6 Fuel Management -->
+  <div class="policy-section">
+    <div class="policy-section-header accent-hdr" onclick="togglePolicy(this)">
+      6. Fuel Management <span class="chevron">▾</span>
+    </div>
+    <div class="policy-body">
+      <p>Fuel may only be purchased using approved company procedures. Whenever fuel is purchased:</p>
+      <ul>
+        <li>A clear photo of the fuel receipt must be posted <strong>immediately</strong> to the Driver Handover WhatsApp Group</li>
+        <li>Receipts may not be submitted at the end of the day</li>
+        <li>Photos must be clear and readable</li>
+      </ul>
+      <p>The receipt must clearly show: date, time, petrol station, amount, and litres purchased.</p>
+      <div class="highlight">Failure to submit receipts immediately may result in disciplinary action.</div>
+    </div>
+  </div>
+
+  <!-- 7 Loyalty Cards -->
+  <div class="policy-section">
+    <div class="policy-section-header" onclick="togglePolicy(this)">
+      7 & 8. Company Loyalty Cards <span class="chevron">▾</span>
+    </div>
+    <div class="policy-body">
+      <p>Motherdough provides a <strong>BP Rewards Card</strong> and a <strong>Pick n Pay Smart Shopper Card</strong> (7353 2804 0377 1419). These remain company property and must:</p>
+      <ul>
+        <li>Remain inside the vehicle at all times</li>
+        <li>Never be removed from the vehicle</li>
+        <li>Be used whenever purchases are made at BP or Pick n Pay</li>
+      </ul>
+      <p>The rewards, points, and cashback belong to Motherdough. Employees may <strong>not</strong> use personal loyalty cards for company purchases.</p>
+      <div class="highlight">Using personal loyalty cards for company purchases is strictly prohibited and may result in disciplinary action.</div>
+    </div>
+  </div>
+
+  <!-- 9-11 Communication -->
+  <div class="policy-section">
+    <div class="policy-section-header" onclick="togglePolicy(this)">
+      9–11. Communication Standards <span class="chevron">▾</span>
+    </div>
+    <div class="policy-body">
+      <p>Communication forms part of every employee's responsibilities. Sending a message does not automatically mean the matter has been communicated successfully. The responsibility remains with the employee until the matter has been acknowledged, understood, attended to, and resolved.</p>
+      <div class="highlight">"I sent a message" is not considered completion of communication.</div>
+      <p>On WhatsApp, employees must acknowledge instructions. Acceptable responses include: <strong>Received, Understood, Will do, Done, Completed</strong>.</p>
+      <p>Phone calls should only be made after a message has been sent and reasonable time has been allowed for a response. <strong>Group calls are not to be used to contact specific individuals.</strong></p>
+    </div>
+  </div>
+
+  <!-- 12 Purchasing -->
+  <div class="policy-section">
+    <div class="policy-section-header" onclick="togglePolicy(this)">
+      12. Purchasing & Shopping <span class="chevron">▾</span>
+    </div>
+    <div class="policy-body">
+      <p>When shopping for company supplies:</p>
+      <ul>
+        <li>Calculate the estimated total while shopping</li>
+        <li>Obtain approval <strong>before</strong> reaching the checkout</li>
+        <li>Do not wait until standing at the till before requesting approval</li>
+        <li>Submit receipts immediately after purchase</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 13-14 Handover -->
+  <div class="policy-section">
+    <div class="policy-section-header accent-hdr" onclick="togglePolicy(this)">
+      13 & 14. Daily Handover & Outstanding Tasks <span class="chevron">▾</span>
+    </div>
+    <div class="policy-body">
+      <p>A handover is mandatory every day — whether the employee is working the following day or not. The following must be communicated before clocking out:</p>
+      <ul>
+        <li>Outstanding deliveries and collections</li>
+        <li>Vehicle issues and fuel requirements</li>
+        <li>Maintenance concerns</li>
+        <li>Stock transfer issues</li>
+        <li>Tasks not completed</li>
+        <li>Location of keys and company bank card</li>
+      </ul>
+      <p>Any task not completed must be communicated on the designated WhatsApp group before clocking out. The next shift must know what was completed, what remains outstanding, and what action is required.</p>
+    </div>
+  </div>
+
+  <!-- 15 Clocking -->
+  <div class="policy-section">
+    <div class="policy-section-header" onclick="togglePolicy(this)">
+      15. Clocking In & Out <span class="chevron">▾</span>
+    </div>
+    <div class="policy-body">
+      <p>Employees must clock in and clock out from the bakery or approved workplace:</p>
+      <div class="highlight">61 Cabriere Street, Franschhoek, 6970</div>
+      <p>Employees may <strong>not</strong>:</p>
+      <ul>
+        <li>Clock out while driving</li>
+        <li>Clock out from company vehicles</li>
+        <li>Clock out after arriving home</li>
+      </ul>
+      <p>Employees clock out when work is completed, not when they arrive home.</p>
+    </div>
+  </div>
+
+  <!-- 16 Accidents -->
+  <div class="policy-section">
+    <div class="policy-section-header accent-hdr" onclick="togglePolicy(this)">
+      16. Accidents, Fines & Violations <span class="chevron">▾</span>
+    </div>
+    <div class="policy-body">
+      <p>All accidents must be reported immediately. Drivers are personally responsible for:</p>
+      <ul>
+        <li>Traffic, speeding, and parking fines</li>
+        <li>Traffic violations</li>
+      </ul>
+      <div class="highlight">Vehicle damage resulting from negligence may result in financial liability as permitted by law.</div>
+    </div>
+  </div>
+
+  <!-- 17 Prohibited -->
+  <div class="policy-section">
+    <div class="policy-section-header" onclick="togglePolicy(this)">
+      17. Prohibited Conduct <span class="chevron">▾</span>
+    </div>
+    <div class="policy-body">
+      <p>The following are strictly prohibited:</p>
+      <ul>
+        <li>Driving under the influence of alcohol or drugs</li>
+        <li>Smoking or vaping in company vehicles</li>
+        <li>Using a cell phone while driving without hands-free equipment (provided once off by the company — replacement is the driver's responsibility)</li>
+        <li>Allowing unauthorised drivers</li>
+        <li>Using company vehicles for personal use</li>
+        <li>Using personal loyalty cards during company purchases</li>
+        <li>Removing company loyalty cards from vehicles</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 18 Failure to Comply -->
+  <div class="policy-section">
+    <div class="policy-section-header" onclick="togglePolicy(this)">
+      18. Failure to Comply <span class="chevron">▾</span>
+    </div>
+    <div class="policy-body">
+      <p>Failure to comply with this policy may result in:</p>
+      <ul>
+        <li>Verbal warning</li>
+        <li>Written warning</li>
+        <li>Final written warning</li>
+        <li>Disciplinary hearing</li>
+        <li>Termination of employment where appropriate</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div style="text-align:center;padding:20px 0 10px;font-size:12px;color:var(--light);">
+    Motherdough Pty Ltd &nbsp;·&nbsp; Reg No: 2020/472827/07<br>
+    8 Vredenburg Lane, Cape Town, 8000
+  </div>
+
+</div>
+
 <div id="alert-modal-overlay">
   <div id="alert-modal">
     <div class="modal-header">
@@ -1113,6 +1478,27 @@ function downloadAgain() {
 
 function resetForm() {
   location.reload();
+}
+
+// ── Tab switching ─────────────────────────────────────────────────────────────
+
+function switchTab(tab) {
+  const isInspection = tab === 'inspection';
+  document.getElementById('form-main').style.display    = isInspection ? 'block' : 'none';
+  document.getElementById('policy-main').style.display  = isInspection ? 'none' : 'block';
+  document.getElementById('progress-bar-wrap').style.display = isInspection ? 'block' : 'none';
+  document.getElementById('sticky-footer').style.display = isInspection ? 'flex' : 'none';
+  document.getElementById('header-subtitle').textContent = isInspection ? 'Daily Vehicle Inspection' : 'Driver & Vehicle Policy';
+  document.querySelectorAll('.tab-btn').forEach((btn, i) => {
+    btn.classList.toggle('active', (i === 0) === isInspection);
+  });
+}
+
+function togglePolicy(header) {
+  const body = header.nextElementSibling;
+  const isOpen = body.classList.contains('open');
+  body.classList.toggle('open', !isOpen);
+  header.classList.toggle('open', !isOpen);
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────
