@@ -355,6 +355,20 @@
     font-size: 13px;
   }
   #sticky-footer .count span { color: var(--accent); font-weight: 700; }
+  #sticky-footer .btn-new {
+    padding: 9px 14px;
+    background: transparent;
+    color: #aaa;
+    border: 1.5px solid #555;
+    border-radius: 7px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: var(--font-body);
+    letter-spacing: 0.04em;
+    transition: all 0.15s;
+  }
+  #sticky-footer .btn-new:hover { border-color: #aaa; color: #fff; }
   #sticky-footer .btn-pdf {
     padding: 9px 20px;
     background: var(--accent);
@@ -511,6 +525,115 @@
     line-height: 1.6;
   }
 
+  /* ── New Inspection Modal ── */
+  #new-inspection-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  #new-inspection-overlay.open { display: flex; }
+  #new-inspection-modal {
+    background: #fff;
+    border-radius: 14px;
+    width: 100%;
+    max-width: 400px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+    animation: modal-in 0.2s ease;
+  }
+  .new-modal-header {
+    background: var(--dark);
+    padding: 18px 20px 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .new-modal-icon {
+    width: 40px;
+    height: 40px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+  .new-modal-header h3 {
+    color: #fff;
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 2px;
+  }
+  .new-modal-header p {
+    color: rgba(255,255,255,0.55);
+    font-size: 12px;
+  }
+  .new-modal-body {
+    padding: 20px 20px 10px;
+  }
+  .new-modal-body label {
+    display: block;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--light);
+    margin-bottom: 7px;
+  }
+  .new-modal-body input[type="date"],
+  .new-modal-body input[type="text"] {
+    width: 100%;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    padding: 11px 13px;
+    font-size: 15px;
+    font-family: var(--font-body);
+    color: var(--dark);
+    background: var(--cream);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .new-modal-body input:focus {
+    border-color: var(--accent);
+    background: #fff;
+  }
+  .new-modal-footer {
+    padding: 16px 20px 20px;
+    display: flex;
+    gap: 10px;
+  }
+  .new-modal-cancel {
+    padding: 12px 16px;
+    background: transparent;
+    color: var(--mid);
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: var(--font-body);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .new-modal-cancel:hover { border-color: var(--dark); color: var(--dark); }
+  .new-modal-confirm {
+    flex: 1;
+    padding: 12px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 700;
+    font-family: var(--font-body);
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .new-modal-confirm:hover { background: #A33408; }
 
   #alert-modal-overlay {
     display: none;
@@ -1018,9 +1141,33 @@
   <button class="btn-outline" onclick="resetForm()">＋ New Inspection</button>
 </div>
 
+<!-- ── New Inspection Modal ── -->
+<div id="new-inspection-overlay">
+  <div id="new-inspection-modal">
+    <div class="new-modal-header">
+      <div class="new-modal-icon">📋</div>
+      <div>
+        <h3>New Inspection</h3>
+        <p>This will clear all current data and start fresh.</p>
+      </div>
+    </div>
+    <div class="new-modal-body">
+      <label>Select Date</label>
+      <input type="date" id="new-inspection-date" />
+      <label style="margin-top:14px;">Driver Name</label>
+      <input type="text" id="new-inspection-driver" placeholder="Full name" />
+    </div>
+    <div class="new-modal-footer">
+      <button class="new-modal-cancel" onclick="closeNewModal()">Cancel</button>
+      <button class="new-modal-confirm" onclick="confirmNewInspection()">Start Inspection →</button>
+    </div>
+  </div>
+</div>
+
 <!-- ── Sticky footer ── -->
 <div id="sticky-footer">
   <div class="count">Completed: <span id="count-done">0</span> / <span id="count-total">0</span></div>
+  <button class="btn-new" onclick="resetForm()">↺ New</button>
   <button class="btn-pdf" onclick="generatePDF()">Download PDF</button>
 </div>
 
@@ -1100,10 +1247,33 @@ const handoverChecks = [
 ];
 
 // ── State ─────────────────────────────────────────────────────────────────────
-const state = {};
+const STORAGE_KEY = 'motherdough_inspection';
+let state = {};
 let fuelLevel = '';
 let lastPdfDoc = null;
 let activeModalId = null;
+
+function saveState() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ state, fuelLevel }));
+  } catch(e) {}
+}
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed.state) Object.assign(state, parsed.state);
+      if (parsed.fuelLevel) fuelLevel = parsed.fuelLevel;
+    }
+  } catch(e) {}
+}
+
+function clearState() {
+  try { localStorage.removeItem(STORAGE_KEY); } catch(e) {}
+  location.reload();
+}
 
 // ── Render helpers ────────────────────────────────────────────────────────────
 
@@ -1129,11 +1299,11 @@ function renderChecks(containerId, checks) {
 
       if (chk.hasSubInputs) {
         chk.subInputs.forEach(inp => {
-          sub.innerHTML += `<label>${inp.label}</label><input class="row-input" id="${inp.id}" type="text" placeholder="${inp.placeholder}" oninput="state['${inp.id}']=this.value;updateProgress()">`;
+          sub.innerHTML += `<label>${inp.label}</label><input class="row-input" id="${inp.id}" type="text" placeholder="${inp.placeholder}" oninput="state['${inp.id}']=this.value;saveState();updateProgress()">`;
         });
       }
       if (chk.hasComment) {
-        sub.innerHTML += `<label>${chk.commentLabel || 'Comments'}</label><textarea class="row-input" id="cmt_${chk.id}" rows="2" placeholder="Add details..." oninput="state['cmt_${chk.id}']=this.value"></textarea>`;
+        sub.innerHTML += `<label>${chk.commentLabel || 'Comments'}</label><textarea class="row-input" id="cmt_${chk.id}" rows="2" placeholder="Add details..." oninput="state['cmt_${chk.id}']=this.value;saveState()"></textarea>`;
       }
       container.appendChild(sub);
     }
@@ -1142,6 +1312,7 @@ function renderChecks(containerId, checks) {
 
 function setVal(id, val, btn) {
   state[id] = val;
+  saveState();
   // Update button styles
   btn.parentElement.querySelectorAll('.yn-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
@@ -1179,6 +1350,7 @@ function closeModal(skip) {
   if (!skip) {
     const val = document.getElementById('modal-textarea').value.trim();
     if (activeModalId) state[`popup_${activeModalId}`] = val;
+    saveState();
   }
   document.getElementById('alert-modal-overlay').classList.remove('open');
   activeModalId = null;
@@ -1189,12 +1361,63 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('alert-modal-overlay').addEventListener('click', function(e) {
     if (e.target === this) closeModal(true);
   });
+  document.getElementById('new-inspection-overlay').addEventListener('click', function(e) {
+    if (e.target === this) closeNewModal();
+  });
 });
 
 function setFuel(btn) {
   document.querySelectorAll('.fuel-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   fuelLevel = btn.dataset.fuel;
+  saveState();
+  updateProgress();
+}
+
+function restoreState() {
+  // Restore Yes/No button active states
+  allChecks().forEach(chk => {
+    const val = state[chk.id];
+    if (val) {
+      const btns = document.querySelectorAll(`.yn-btn[data-id="${chk.id}"]`);
+      btns.forEach(b => {
+        b.classList.toggle('active', b.dataset.val === val);
+      });
+      // Restore sub-input visibility
+      const subEl = document.getElementById(`sub_${chk.id}`);
+      if (subEl && (chk.hasSubInputs || chk.hasComment)) {
+        subEl.classList.toggle('visible', val === 'Yes');
+      }
+    }
+    // Restore sub-input text values
+    if (chk.hasSubInputs) {
+      chk.subInputs.forEach(inp => {
+        const el = document.getElementById(inp.id);
+        if (el && state[inp.id]) el.value = state[inp.id];
+      });
+    }
+    if (chk.hasComment) {
+      const el = document.getElementById(`cmt_${chk.id}`);
+      if (el && state[`cmt_${chk.id}`]) el.value = state[`cmt_${chk.id}`];
+    }
+  });
+  // Restore fuel button
+  if (fuelLevel) {
+    document.querySelectorAll('.fuel-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.fuel === fuelLevel);
+    });
+  }
+  // Restore meta fields
+  ['driver','vehicle','odo-start','odo-end'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el && state[id]) el.value = state[id];
+  });
+  // Restore action tomorrow
+  const at = document.getElementById('action_tomorrow');
+  if (at && state['action_tomorrow']) at.value = state['action_tomorrow'];
+  // Restore date if changed from default
+  const dateEl = document.getElementById('date');
+  if (dateEl && state['date']) dateEl.value = state['date'];
   updateProgress();
 }
 
@@ -1477,6 +1700,34 @@ function downloadAgain() {
 }
 
 function resetForm() {
+  openNewModal();
+}
+
+function openNewModal() {
+  const today = new Date().toISOString().slice(0, 10);
+  document.getElementById('new-inspection-date').value = today;
+  document.getElementById('new-inspection-driver').value = '';
+  document.getElementById('new-inspection-overlay').classList.add('open');
+  setTimeout(() => document.getElementById('new-inspection-driver').focus(), 200);
+}
+
+function closeNewModal() {
+  document.getElementById('new-inspection-overlay').classList.remove('open');
+}
+
+function confirmNewInspection() {
+  const date   = document.getElementById('new-inspection-date').value;
+  const driver = document.getElementById('new-inspection-driver').value.trim();
+
+  // Clear all saved state
+  try { localStorage.removeItem(STORAGE_KEY); } catch(e) {}
+
+  // Pre-seed the new state with the chosen date and driver
+  const fresh = {};
+  if (date)   fresh['date']   = date;
+  if (driver) fresh['driver'] = driver;
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ state: fresh, fuelLevel: '' })); } catch(e) {}
+
   location.reload();
 }
 
@@ -1503,10 +1754,14 @@ function togglePolicy(header) {
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
-  // Set today's date
+  // Load any saved state first
+  loadState();
+
+  // Set today's date (use saved date if present, otherwise today)
   const today = new Date().toISOString().slice(0, 10);
-  document.getElementById('date').value = today;
-  document.getElementById('header-date').textContent = formatDate(today);
+  const dateToShow = state['date'] || today;
+  document.getElementById('date').value = dateToShow;
+  document.getElementById('header-date').textContent = formatDate(dateToShow);
 
   renderChecks('sod-checks', sodChecks);
   renderChecks('fuel-checks', fuelChecks);
@@ -1514,6 +1769,27 @@ document.addEventListener('DOMContentLoaded', () => {
   renderChecks('issues-checks', issueChecks);
   renderChecks('tasks-checks', taskChecks);
   renderChecks('handover-checks', handoverChecks);
+
+  // Restore UI from loaded state
+  restoreState();
+
+  // Save meta fields to state on input
+  ['driver','vehicle','odo-start','odo-end'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('input', () => { state[id] = el.value; saveState(); });
+  });
+  // Save date to state
+  const dateEl = document.getElementById('date');
+  if (dateEl) dateEl.addEventListener('change', () => { state['date'] = dateEl.value; saveState(); });
+  // Save action tomorrow to state
+  const at = document.getElementById('action_tomorrow');
+  if (at) at.addEventListener('input', () => { state['action_tomorrow'] = at.value; saveState(); });
+
+  // Restore UI when page becomes visible again (mobile tab switching, screen lock, etc.)
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) restoreState();
+  });
+  window.addEventListener('focus', restoreState);
 
   updateProgress();
 });
