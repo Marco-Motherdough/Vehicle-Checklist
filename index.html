@@ -1407,17 +1407,19 @@ function restoreState() {
       b.classList.toggle('active', b.dataset.fuel === fuelLevel);
     });
   }
-  // Restore meta fields
+  // Restore meta fields (skip the one currently focused so an
+  // in-progress edit is never overwritten)
   ['driver','vehicle','odo-start','odo-end'].forEach(id => {
     const el = document.getElementById(id);
-    if (el && state[id]) el.value = state[id];
+    if (el && state[id] && document.activeElement !== el) el.value = state[id];
   });
   // Restore action tomorrow
   const at = document.getElementById('action_tomorrow');
-  if (at && state['action_tomorrow']) at.value = state['action_tomorrow'];
-  // Restore date if changed from default
+  if (at && state['action_tomorrow'] && document.activeElement !== at) at.value = state['action_tomorrow'];
+  // Restore date if changed from default (skip while the field is
+  // actively focused so an in-progress edit is never overwritten)
   const dateEl = document.getElementById('date');
-  if (dateEl && state['date']) dateEl.value = state['date'];
+  if (dateEl && state['date'] && document.activeElement !== dateEl) dateEl.value = state['date'];
   updateProgress();
 }
 
@@ -1778,9 +1780,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const el = document.getElementById(id);
     if (el) el.addEventListener('input', () => { state[id] = el.value; saveState(); });
   });
-  // Save date to state
+  // Save date to state (use 'input' so the value is synced immediately,
+  // not just on blur/commit — otherwise a focus/visibilitychange restore
+  // can race ahead of 'change' and revert the field to the old date)
   const dateEl = document.getElementById('date');
-  if (dateEl) dateEl.addEventListener('change', () => { state['date'] = dateEl.value; saveState(); });
+  if (dateEl) {
+    const syncDate = () => {
+      state['date'] = dateEl.value;
+      saveState();
+      document.getElementById('header-date').textContent = formatDate(dateEl.value);
+    };
+    dateEl.addEventListener('input', syncDate);
+    dateEl.addEventListener('change', syncDate);
+  }
   // Save action tomorrow to state
   const at = document.getElementById('action_tomorrow');
   if (at) at.addEventListener('input', () => { state['action_tomorrow'] = at.value; saveState(); });
